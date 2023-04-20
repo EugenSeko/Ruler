@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math';
+import 'package:vector_math/vector_math.dart' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sensors/flutter_sensors.dart';
@@ -17,6 +19,18 @@ class _MyAppState extends State<MyApp> {
   List<double> _gyroData = List.filled(3, 0.0);
   StreamSubscription? _accelSubscription;
   StreamSubscription? _gyroSubscription;
+
+  double get tiltAngle => atan2(_accelData[1],
+      sqrt(_accelData[0] * _accelData[0] + _accelData[2] * _accelData[2]));
+
+  double get pitchAngle => atan2(-_accelData[0],
+      sqrt(_accelData[1] * _accelData[1] + _accelData[2] * _accelData[2]));
+
+  double get tiltAngle2 => atan2(_gyroData[1],
+      sqrt(_gyroData[0] * _gyroData[0] + _gyroData[2] * _gyroData[2]));
+
+  double get pitchAngle2 => atan2(-_gyroData[0],
+      sqrt(_gyroData[1] * _gyroData[1] + _gyroData[2] * _gyroData[2]));
 
   @override
   void initState() {
@@ -47,7 +61,7 @@ class _MyAppState extends State<MyApp> {
     if (_accelAvailable) {
       final stream = await SensorManager().sensorUpdates(
         sensorId: Sensors.ACCELEROMETER,
-        interval: Sensors.SENSOR_DELAY_FASTEST,
+        interval: Sensors.SENSOR_DELAY_GAME,
       );
       _accelSubscription = stream.listen((sensorEvent) {
         setState(() {
@@ -74,8 +88,10 @@ class _MyAppState extends State<MyApp> {
   Future<void> _startGyroscope() async {
     if (_gyroSubscription != null) return;
     if (_gyroAvailable) {
-      final stream =
-          await SensorManager().sensorUpdates(sensorId: Sensors.GYROSCOPE);
+      final stream = await SensorManager().sensorUpdates(
+        sensorId: Sensors.GYROSCOPE,
+        interval: Sensors.SENSOR_DELAY_GAME,
+      );
       _gyroSubscription = stream.listen((sensorEvent) {
         setState(() {
           _gyroData = sensorEvent.data;
@@ -112,17 +128,21 @@ class _MyAppState extends State<MyApp> {
               ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                "[0](X) = ${_accelData[0]}",
+                "Tilt angle = $tiltAngle",
                 textAlign: TextAlign.center,
               ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                "[1](Y) = ${_accelData[1]}",
+                "Pitch angle = $pitchAngle",
                 textAlign: TextAlign.center,
               ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                "[2](Z) = ${_accelData[2]}",
+                "Tilt angle in degrees = ${math.degrees(tiltAngle)}",
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                "Pitch angle in degrees = ${math.degrees(pitchAngle)}",
                 textAlign: TextAlign.center,
               ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
@@ -157,17 +177,20 @@ class _MyAppState extends State<MyApp> {
               ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                "[0](X) = ${_gyroData[0]}",
+                "Tilt angle = $tiltAngle2",
                 textAlign: TextAlign.center,
               ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                "[1](Y) = ${_gyroData[1]}",
+                "Pitch anle = $pitchAngle2",
                 textAlign: TextAlign.center,
               ),
-              Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                "[2](Z) = ${_gyroData[2]}",
+                "Tilt angle in degrees = ${math.degrees(tiltAngle2)}",
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                "Pitch angle in degrees = ${math.degrees(pitchAngle2)}",
                 textAlign: TextAlign.center,
               ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
