@@ -19,7 +19,7 @@ class _MyAppState extends State<MyApp> {
   List<double> _gyroData = List.filled(3, 0.0);
   StreamSubscription? _accelSubscription;
   StreamSubscription? _gyroSubscription;
-  bool isCameraUp = false;
+  bool get isCameraUp => _accelData[2].isNegative;
 
   double get tiltAngle => atan2(_accelData[1],
       sqrt(_accelData[0] * _accelData[0] + _accelData[2] * _accelData[2]));
@@ -67,9 +67,6 @@ class _MyAppState extends State<MyApp> {
       _accelSubscription = stream.listen((sensorEvent) {
         setState(() {
           _accelData = sensorEvent.data;
-          if (double.parse(_accelData[1].toStringAsFixed(2)) < 3.14) {
-            isCameraUp = !isCameraUp;
-          }
         });
       });
     }
