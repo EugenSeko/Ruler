@@ -29,10 +29,11 @@ class EntryDecimal extends StatelessWidget {
       style: const TextStyle(color: colorI1),
       decoration: const InputDecoration(
         contentPadding: EdgeInsets.all(8),
-        hintText: 'Input height',
+        hintText: ' Input height',
         hintStyle: TextStyle(
           color: colorI1,
-          fontSize: 13,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
         ),
         enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: colorI1),

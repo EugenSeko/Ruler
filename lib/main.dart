@@ -46,6 +46,8 @@ class _CameraAppState extends State<CameraApp> {
   double get pitchAngle => atan2(-_accelData[0],
       sqrt(_accelData[1] * _accelData[1] + _accelData[2] * _accelData[2]));
 
+  void Function()? onButtonTap;
+
   @override
   void initState() {
     _checkAccelerometerStatus();
@@ -88,12 +90,15 @@ class _CameraAppState extends State<CameraApp> {
         interval: Sensors.SENSOR_DELAY_FASTEST,
       );
       _accelSubscription = stream.listen((sensorEvent) {
-        setState(() {
-          _accelData = sensorEvent.data;
-        });
+        // setState(() {
+        //   _accelData = sensorEvent.data;
+        // });
+        _accelData = sensorEvent.data;
       });
     }
   }
+
+  Color sunColor = colorI2;
 
   @override
   Widget build(BuildContext context) {
@@ -129,10 +134,10 @@ class _CameraAppState extends State<CameraApp> {
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 28, 130),
+                    padding: const EdgeInsets.fromLTRB(0, 0, 28, 140),
                     child: SizedBox(
-                      height: 32,
-                      width: 89,
+                      height: 34,
+                      width: 109,
                       child: EntryDecimal(
                         onSubmitted: _setHeight,
                       ),
@@ -142,11 +147,11 @@ class _CameraAppState extends State<CameraApp> {
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 26, 200),
+                    padding: const EdgeInsets.fromLTRB(0, 0, 26, 190),
                     child: TextButton(
                       style: ButtonStyle(
                           minimumSize:
-                              MaterialStateProperty.all(const Size(10, 90)),
+                              MaterialStateProperty.all(const Size(100, 32)),
                           overlayColor:
                               MaterialStateProperty.resolveWith<Color>(
                             (Set<MaterialState> states) {
@@ -163,9 +168,10 @@ class _CameraAppState extends State<CameraApp> {
                                   RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(60.0),
                                       side: const BorderSide(color: colorI1)))),
-                      onPressed: _onButtonTap,
+                      onPressed: onButtonTap,
                       child: Text(
                         _buttonText,
+                        textScaleFactor: 1.2,
                         style: const TextStyle(color: colorI1),
                       ),
                     ),
@@ -176,10 +182,35 @@ class _CameraAppState extends State<CameraApp> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Distance: $_distance'),
-                        Text('Height: $_height'),
-                        Text('Lenght: $_lenght'),
+                        Text(
+                          'Distance: $_distance',
+                          style: const TextStyle(color: colorI1),
+                          textScaleFactor: 1.2,
+                        ),
+                        Text(
+                          'Height: $_height',
+                          style: const TextStyle(color: colorI1),
+                          textScaleFactor: 1.2,
+                        ),
+                        Text(
+                          'Lenght: $_lenght',
+                          style: const TextStyle(color: colorI1),
+                          textScaleFactor: 1.2,
+                        ),
                       ]),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                      padding: const EdgeInsets.fromLTRB(32, 0, 0, 32),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.sunny,
+                          size: 38,
+                        ),
+                        color: sunColor,
+                        onPressed: _swichSensors,
+                      )),
                 ),
               ],
             ),
@@ -187,6 +218,22 @@ class _CameraAppState extends State<CameraApp> {
         ),
       ),
     );
+  }
+
+  void _swichSensors() {
+    if (_accelSubscription != null) {
+      _stopAccelerometer();
+      setState(() {
+        sunColor = colorI2;
+        onButtonTap = null;
+      });
+    } else {
+      _startAccelerometer();
+      setState(() {
+        sunColor = colorI1;
+        onButtonTap = _onButtonTap;
+      });
+    }
   }
 
   void _onButtonTap() {
@@ -209,11 +256,9 @@ class _CameraAppState extends State<CameraApp> {
   }
 
   void _setDistance() {
-    // _startAccelerometer();
     setState(() {
       _distance = distance;
     });
-    // _stopAccelerometer();
   }
 
   void _reset() {
@@ -226,7 +271,6 @@ class _CameraAppState extends State<CameraApp> {
   double h2 = 0;
 
   void _setPoint() {
-    // _startAccelerometer();
     setState(() {
       if (true) {
         double x = _distance * tan(((pi / 2) - tiltAngle));
@@ -238,7 +282,6 @@ class _CameraAppState extends State<CameraApp> {
         }
       }
     });
-    // _stopAccelerometer();
   }
 
   void _getLenght() {
@@ -249,7 +292,7 @@ class _CameraAppState extends State<CameraApp> {
   }
 
   void _setHeight(String str) {
-    _startAccelerometer();
+    if (str.isEmpty) return;
     _reset();
     setState(() {
       double height = double.parse(str);
