@@ -2,8 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sensors/flutter_sensors.dart';
+import 'package:sensor_library/models/raw_sensors/accelerometer.dart';
+import 'package:sensor_library/models/raw_sensors/barometer.dart';
+import 'package:sensor_library/models/raw_sensors/compass.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatefulWidget {
   @override
@@ -42,7 +47,33 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  double a = 0;
+  double c = 0;
+  double? b = 0;
+
   Future<void> _startAccelerometer() async {
+    Barometer baro = Barometer(inMillis: 100);
+    baro.getRaw().listen((element) {
+      double valueInHectopascal = element.hectpascal;
+      double valueInMMMercury = element.millimeterOfMercury;
+      a = valueInHectopascal;
+    });
+
+    Compass compass = Compass(inMillis: 100);
+    compass.getRaw().listen((element) {
+      double? heading = element.heading;
+      double? accuracy = element.accuracy;
+      b = heading;
+      // ..
+      // Do your magic here
+    });
+
+    Accelerometer acc = Accelerometer(inMillis: 100);
+    acc.getRaw().listen((element) {
+      var x = element.x;
+      c = x;
+    });
+
     if (_accelSubscription != null) return;
     if (_accelAvailable) {
       final stream = await SensorManager().sensorUpdates(
