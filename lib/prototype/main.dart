@@ -5,9 +5,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:sensor_app/style/color_schema.dart';
+import 'package:sensor_app/utils/timer.dart';
 import 'package:sensor_app/widgets/entry_decimal.dart';
 
-import 'package:flutter_sensors/flutter_sensors.dart';
+import '../utils/sensor_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,74 +29,40 @@ class CameraApp extends StatefulWidget {
 class _CameraAppState extends State<CameraApp> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
+  final SensorManager sensorManager = SensorManager();
+
   String _buttonText = 'Set distance';
   double _distance = 0;
   double _lenght = 0;
   double _height = 0;
 
-  double get distance => _height / tan((pi / 2) - tiltAngle);
-
-  bool _accelAvailable = false;
-  List<double> _accelData = List.filled(3, 0.0);
-  StreamSubscription? _accelSubscription;
-  bool get isCameraUp => _accelData[2].isNegative;
-
-  double get tiltAngle => atan2(_accelData[1],
-      sqrt(_accelData[0] * _accelData[0] + _accelData[2] * _accelData[2]));
-
-  double get pitchAngle => atan2(-_accelData[0],
-      sqrt(_accelData[1] * _accelData[1] + _accelData[2] * _accelData[2]));
+  double get distance => _height / tan((pi / 2) - sensorManager.tiltAngle);
+  bool get isCameraUp => sensorManager.accelData[2].isNegative;
 
   void Function()? onButtonTap;
+  MyTimer? timer;
+  var duration = const Duration(milliseconds: 100);
 
   @override
   void initState() {
-    _checkAccelerometerStatus();
+    sensorManager.checkAccelerometerStatus();
     super.initState();
     _controller = CameraController(
       widget.camera,
       ResolutionPreset.medium,
     );
     _initializeControllerFuture = _controller.initialize();
+    timer = MyTimer(() {
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
-    _stopAccelerometer();
+    sensorManager.stopAccelerometer();
     _controller.dispose();
+    timer?.stopTimer();
     super.dispose();
-  }
-
-  void _checkAccelerometerStatus() async {
-    await SensorManager()
-        .isSensorAvailable(Sensors.ACCELEROMETER)
-        .then((result) {
-      setState(() {
-        _accelAvailable = result;
-      });
-    });
-  }
-
-  void _stopAccelerometer() {
-    if (_accelSubscription == null) return;
-    _accelSubscription?.cancel();
-    _accelSubscription = null;
-  }
-
-  Future<void> _startAccelerometer() async {
-    if (_accelSubscription != null) return;
-    if (_accelAvailable) {
-      final stream = await SensorManager().sensorUpdates(
-        sensorId: Sensors.ACCELEROMETER,
-        interval: Sensors.SENSOR_DELAY_FASTEST,
-      );
-      _accelSubscription = stream.listen((sensorEvent) {
-        // setState(() {
-        //   _accelData = sensorEvent.data;
-        // });
-        _accelData = sensorEvent.data;
-      });
-    }
   }
 
   Color sunColor = colorI2;
@@ -140,6 +107,7 @@ class _CameraAppState extends State<CameraApp> {
                       width: 109,
                       child: EntryDecimal(
                         onSubmitted: _setHeight,
+                        onTap: () => timer?.stopTimer(),
                       ),
                     ),
                   ),
@@ -183,7 +151,7 @@ class _CameraAppState extends State<CameraApp> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Distance: $_distance',
+                          'Distance: ${_distance == 0 ? distance : _distance}',
                           style: const TextStyle(color: colorI1),
                           textScaleFactor: 1.2,
                         ),
@@ -221,14 +189,15 @@ class _CameraAppState extends State<CameraApp> {
   }
 
   void _swichSensors() {
-    if (_accelSubscription != null) {
-      _stopAccelerometer();
+    if (sensorManager.accelSubscription != null) {
+      sensorManager.stopAccelerometer();
       setState(() {
         sunColor = colorI2;
         onButtonTap = null;
       });
+      timer?.stopTimer();
     } else {
-      _startAccelerometer();
+      sensorManager.startAccelerometer();
       setState(() {
         sunColor = colorI1;
         onButtonTap = _onButtonTap;
@@ -256,15 +225,15 @@ class _CameraAppState extends State<CameraApp> {
   }
 
   void _setDistance() {
+    timer?.stopTimer();
     setState(() {
       _distance = distance;
     });
   }
 
   void _reset() {
-    setState(() {
-      h1 = h2 = _distance = _lenght = 0;
-    });
+    h1 = h2 = _distance = _lenght = 0;
+    timer?.startTimer(duration);
   }
 
   double h1 = 0;
@@ -273,7 +242,7 @@ class _CameraAppState extends State<CameraApp> {
   void _setPoint() {
     setState(() {
       if (true) {
-        double x = _distance * tan(((pi / 2) - tiltAngle));
+        double x = _distance * tan(((pi / 2) - sensorManager.tiltAngle));
 
         if (h1 == 0) {
           h1 = isCameraUp ? _height + x : _height - x;
@@ -298,5 +267,6 @@ class _CameraAppState extends State<CameraApp> {
       double height = double.parse(str);
       _height = height;
     });
+    timer?.startTimer(duration);
   }
 }

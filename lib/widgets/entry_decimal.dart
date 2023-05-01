@@ -6,9 +6,11 @@ import '../utils/decimal_text_input_formatter.dart';
 
 class EntryDecimal extends StatelessWidget {
   final void Function(String)? onSubmitted;
+  final void Function()? onTap;
   EntryDecimal({
     super.key,
     this.onSubmitted,
+    this.onTap,
   });
 
   final _textEditingController = TextEditingController();
@@ -26,6 +28,7 @@ class EntryDecimal extends StatelessWidget {
         _textEditingController.clear();
         onSubmitted?.call(value);
       },
+      onTap: () => onTap?.call(),
       style: const TextStyle(color: colorI1),
       decoration: const InputDecoration(
         contentPadding: EdgeInsets.all(8),
