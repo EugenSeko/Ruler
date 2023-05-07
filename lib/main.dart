@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sensors/flutter_sensors.dart' as fs;
 import 'package:sensor_app/utils/sensor_manager.dart';
 import 'package:sensor_app/utils/timer.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:syncfusion_flutter_charts/sparkcharts.dart';
 
 void main(List<String> args) {
   runApp(MyWidget());
@@ -18,6 +20,8 @@ class _MyWidgetState extends State<MyWidget> {
   SensorManager sm = SensorManager();
   MyTimer? timer;
   List<double> zAccels = [];
+  List<Data> _data = [];
+  int _interval = 0;
   Stopwatch stopwatch = Stopwatch();
   bool isReadData = false;
   int t = 0;
@@ -72,9 +76,15 @@ class _MyWidgetState extends State<MyWidget> {
   void initState() {
     super.initState();
     timer = MyTimer(() {
-      setState(() {});
+      setState(() {
+        _interval++;
+        _data.add(Data(_interval, sm.linearAccelData[2]));
+        if (_data.length > 100) {
+          _data.removeAt(0);
+        }
+      });
     });
-    timer?.startTimer(const Duration(milliseconds: 8));
+    timer?.startTimer(const Duration(milliseconds: 500));
     sm.linearAccelDelay = fs.Sensors.SENSOR_DELAY_FASTEST;
     sm.checkAccelerometerStatus();
     sm.checkLinearAccelerometerStatus();
@@ -88,9 +98,9 @@ class _MyWidgetState extends State<MyWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (isReadData) {
-      zAccels.add(sm.linearAccelData[2]);
-    }
+    // if (isReadData) {
+    //   zAccels.add(sm.linearAccelData[2]);
+    // }
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
@@ -101,51 +111,51 @@ class _MyWidgetState extends State<MyWidget> {
           alignment: AlignmentDirectional.topCenter,
           child: Column(
             children: <Widget>[
-              Text(
-                "Accelerometer Test",
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                "Accelerometer Enabled: ${sm.accelAvailable}",
-                textAlign: TextAlign.center,
-              ),
-              Padding(padding: EdgeInsets.only(top: 16.0)),
-              Text(
-                "[0](X) = ${sm.accelData[0]}",
-                textAlign: TextAlign.center,
-              ),
-              Padding(padding: EdgeInsets.only(top: 16.0)),
-              Text(
-                "[1](Y) = ${sm.accelData[1]}",
-                textAlign: TextAlign.center,
-              ),
-              Padding(padding: EdgeInsets.only(top: 16.0)),
-              Text(
-                "[2](Z) = ${sm.accelData[2]}",
-                textAlign: TextAlign.center,
-              ),
-              Padding(padding: EdgeInsets.only(top: 16.0)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  MaterialButton(
-                    child: Text("Start"),
-                    color: Colors.green,
-                    onPressed: sm.accelAvailable
-                        ? () => sm.startAccelerometer()
-                        : null,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                  ),
-                  MaterialButton(
-                    child: Text("Stop"),
-                    color: Colors.red,
-                    onPressed:
-                        sm.accelAvailable ? () => sm.stopAccelerometer() : null,
-                  ),
-                ],
-              ),
+              // Text(
+              //   "Accelerometer Test",
+              //   textAlign: TextAlign.center,
+              // ),
+              // Text(
+              //   "Accelerometer Enabled: ${sm.accelAvailable}",
+              //   textAlign: TextAlign.center,
+              // ),
+              // Padding(padding: EdgeInsets.only(top: 16.0)),
+              // Text(
+              //   "[0](X) = ${sm.accelData[0]}",
+              //   textAlign: TextAlign.center,
+              // ),
+              // Padding(padding: EdgeInsets.only(top: 16.0)),
+              // Text(
+              //   "[1](Y) = ${sm.accelData[1]}",
+              //   textAlign: TextAlign.center,
+              // ),
+              // Padding(padding: EdgeInsets.only(top: 16.0)),
+              // Text(
+              //   "[2](Z) = ${sm.accelData[2]}",
+              //   textAlign: TextAlign.center,
+              // ),
+              // Padding(padding: EdgeInsets.only(top: 16.0)),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: <Widget>[
+              //     MaterialButton(
+              //       child: Text("Start"),
+              //       color: Colors.green,
+              //       onPressed: sm.accelAvailable
+              //           ? () => sm.startAccelerometer()
+              //           : null,
+              //     ),
+              //     Padding(
+              //       padding: EdgeInsets.all(8.0),
+              //     ),
+              //     MaterialButton(
+              //       child: Text("Stop"),
+              //       color: Colors.red,
+              //       onPressed:
+              //           sm.accelAvailable ? () => sm.stopAccelerometer() : null,
+              //     ),
+              //   ],
+              // ),
               Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
                 "LinearAccel Test",
@@ -181,6 +191,7 @@ class _MyWidgetState extends State<MyWidget> {
                         ? () {
                             sm.startLinearAccelerometer();
                             pullData();
+                            timer?.startTimer(Duration(milliseconds: 8));
                           }
                         : null,
                   ),
@@ -194,15 +205,36 @@ class _MyWidgetState extends State<MyWidget> {
                         ? () {
                             sm.stopLinearAccelerometer();
                             stopPullData();
+                            timer?.stopTimer();
                           }
                         : null,
                   ),
                 ],
               ),
+              Container(
+                child: SfCartesianChart(
+                  primaryXAxis: NumericAxis(),
+                  primaryYAxis: NumericAxis(),
+                  series: <LineSeries<Data, num>>[
+                    LineSeries<Data, num>(
+                      dataSource: _data,
+                      xValueMapper: (Data data, _) => data.x,
+                      yValueMapper: (Data data, _) => data.y,
+                    )
+                  ],
+                ),
+              )
             ],
           ),
         ),
       ),
     );
   }
+}
+
+class Data {
+  final int x;
+  final double y;
+
+  Data(this.x, this.y);
 }
